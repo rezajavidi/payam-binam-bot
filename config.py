@@ -1,1 +1,1 @@
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Replace this with your real bot token
+BOT_TOKEN = 7564679048:AAEJyTH1qzeC0xvLoZjF7FtGc8aSQBdSQdA
