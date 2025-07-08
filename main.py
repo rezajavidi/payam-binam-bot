@@ -1,25 +1,25 @@
+import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.strategy import FSMStrategyType
-from aiogram import F
-import asyncio
 
 from config import BOT_TOKEN
 from handlers import user, message_router
 from db.database import init_db
 
-async def main():
+async def main() -> None:
     await init_db()
+
     bot = Bot(
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    dp = Dispatcher(storage=MemoryStorage(), fsm_strategy=FSMStrategyType.ALWAYS)
+
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(user.router)
     dp.include_router(message_router.router)
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
