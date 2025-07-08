@@ -13,5 +13,7 @@ async def handle_start(msg: types.Message, state: FSMContext):
         await msg.answer(f"پیامتو برای @{args} بنویس و بفرست 👇 (کاملاً ناشناس می‌مونی)")
     else:
         user = await get_or_create_user(msg.from_user)
-        await msg.answer(f"🔗 لینک ناشناس شما:
-https://t.me/YOUR_BOT_USERNAME?start={msg.from_user.username}")
+        await msg.answer(
+            f"""🔗 لینک ناشناس شما:
+https://t.me/YOUR_BOT_USERNAME?start={msg.from_user.username}"""
+        )
