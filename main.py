@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.strategy import FSMStrategy
+from aiogram.fsm.strategy import FSMStrategyType
 from aiogram import F
 import asyncio
 
@@ -17,7 +17,7 @@ async def main():
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    dp = Dispatcher(storage=MemoryStorage(), fsm_strategy=FSMStrategy.SIMPLE)
+    dp = Dispatcher(storage=MemoryStorage(), fsm_strategy=FSMStrategyType.ALWAYS)
     dp.include_router(user.router)
     dp.include_router(message_router.router)
     await dp.start_polling(bot)
