@@ -7,7 +7,9 @@ router = Router()
 
 @router.message(CommandStart())
 async def handle_start(msg: types.Message, state: FSMContext):
-    args = msg.get_args()
+    args = msg.text.split(maxsplit=1)
+    args = args[1] if len(args) > 1 else None
+
     if args:
         await state.update_data(target_username=args)
         await msg.answer(f"پیامتو برای @{args} بنویس و بفرست 👇 (کاملاً ناشناس می‌مونی)")
