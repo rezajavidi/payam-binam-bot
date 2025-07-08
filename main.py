@@ -14,7 +14,8 @@ async def main():
     await init_db()
     bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage(), fsm_strategy=FSMStrategy.SIMPLE)
-    dp.include_routers(user.router, message_router.router)
+    dp.include_router(user.router)
+    dp.include_router(message_router.router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
