@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.strategy import FSMStrategy
 from aiogram import F
@@ -12,7 +13,10 @@ from db.database import init_db
 
 async def main():
     await init_db()
-    bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
     dp = Dispatcher(storage=MemoryStorage(), fsm_strategy=FSMStrategy.SIMPLE)
     dp.include_router(user.router)
     dp.include_router(message_router.router)
