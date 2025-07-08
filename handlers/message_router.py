@@ -12,9 +12,9 @@ async def receive_anonymous_message(msg: types.Message, state: FSMContext, bot: 
         if target:
             await bot.send_message(
                 target.tg_id,
-                f"📩 پیام بی‌نام برات اومده:
+                f"""📩 پیام بی‌نام برات اومده:
 
-{msg.text}"
+{msg.text}"""
             )
             await save_message(target.id, msg.text)
             await msg.answer("✅ پیام ناشناس ارسال شد.")
