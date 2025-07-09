@@ -1,28 +1,23 @@
 import os
-from aiogram import Bot, Dispatcher, F
+import asyncio
+from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message
 
-from aiogram import Bot, Dispatcher, Router, types
-from aiogram.types import Message
-from aiogram.filters import CommandStart
-from db.database import add_user_to_db
+from bot_message_router import router as message_router
+from bot_user import router as user_router
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
-dp = Dispatcher()
-router = Router()
-dp.include_router(router)
+TOKEN = os.getenv("BOT_TOKEN")
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(storage=MemoryStorage())
 
-@router.message(CommandStart())
-async def start_handler(message: Message):
-    user = message.from_user
-    add_user_to_db(user.id, user.first_name, user.username)
-    await message.answer("🎉 خوش اومدی به پیام بینام!")
+dp.include_router(user_router)
+dp.include_router(message_router)
+
+
+async def main():
+    await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
-    import asyncio
-    from aiogram import executor
-    from handlers import message_router
-    dp.include_router(message_router.router)
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
