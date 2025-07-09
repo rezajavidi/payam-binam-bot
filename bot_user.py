@@ -28,7 +28,6 @@ def kb(items):
 
 @router.message(F.text == "/start")
 async def cmd_start(msg: Message, state: FSMContext):
-    # Initial choice: personal link or connect to anonymous
     items = [("link", "📨 دریافت لینک ناشناس شخصی"), ("connect", "🔗 متصل شدن به یک ناشناس")]
     await msg.answer("لطفا یکی از گزینه‌های زیر را انتخاب کنید:", reply_markup=kb(items))
     await state.set_state(StartStates.choice)
@@ -40,11 +39,9 @@ async def start_choice(cb: CallbackQuery, state: FSMContext):
         await cb.message.edit_text("سلام! برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:", reply_markup=kb(GENDERS))
         await state.set_state(ProfileStates.gender)
     elif choice == "link":
-        # generate personal deep link
         me = await cb.message.bot.get_me()
         link = f"https://t.me/{me.username}?start={cb.from_user.id}"
-        await cb.message.edit_text(f"لینک ناشناس شخصی شما:
-{link}")
+        await cb.message.edit_text(f"لینک ناشناس شخصی شما:\n{link}")
         await state.clear()
     await cb.answer()
 
@@ -89,7 +86,6 @@ async def choose_emoji(msg: Message, state: FSMContext):
     emoji = msg.text.strip()
     await state.update_data(emoji=emoji)
     data = await state.get_data()
-    # ذخیره پروفایل کاربر در پایگاه داده
     add_user_to_db(
         user_id=msg.from_user.id,
         first_name=msg.from_user.first_name or "",
@@ -99,5 +95,4 @@ async def choose_emoji(msg: Message, state: FSMContext):
         city=data.get("city")
     )
     await state.clear()
-    # اضافه به صف و تلاش برای اتصال
     await try_connect_user(msg, data)
