@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from bot_queue_manager import add_user_to_queue
-from bot_connector import try_connect_user
+from bot_connector import try_connect_user, active_chats
 
 router = Router()
 
@@ -22,6 +22,17 @@ def kb(items):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=label, callback_data=value)] for value, label in items
     ])
+
+@router.message(F.text.regexp(r'^/start\s+\d+'))
+async def deep_link_connect(msg: Message):
+    parts = msg.text.split()
+    target_id = int(parts[1])
+    visitor_id = msg.from_user.id
+    # ثبت اتصال مستقیم
+    active_chats[visitor_id] = target_id
+    active_chats[target_id] = visitor_id
+    await msg.answer("✅ اتصال برقرار شد! می‌توانید پیام بفرستید.")
+    await msg.bot.send_message(target_id, "✅ شما با یک کاربر ناشناس متصل شدید، گفتگو کنید!")
 
 @router.message(F.text == "/start")
 async def start(msg: Message, state: FSMContext):
@@ -88,7 +99,6 @@ async def finish_profile(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     data["target_city"] = cb.data
     await state.clear()
-
     # اضافه به صف و تلاش برای اتصال
     await try_connect_user(cb.message, data)
     await cb.answer()
