@@ -23,8 +23,7 @@ async def cmd_start(msg: Message, state: FSMContext):
         # Person1 flow: generate personal link
         me = await msg.bot.get_me()
         link = f"https://t.me/{me.username}?start={msg.from_user.id}"
-        await msg.answer(f"لینک ناشناس شخصی شما:
-{link}")
+        await msg.answer(f"لینک ناشناس شخصی شما:\n{link}")
 
 @router.message(LinkStates.emoji)
 async def choose_emoji(msg: Message, state: FSMContext):
