@@ -18,10 +18,13 @@ async def end_chat_cmd(msg: Message):
 async def relay(msg: Message):
     partner_id = get_partner_id(msg.from_user.id)
     if partner_id:
-        # ذخیره پیام در پایگاه داده
+        # store message
         add_message(sender_id=msg.from_user.id, receiver_id=partner_id, text=msg.text)
-        # ارسال با پیشوند ایموجی
         emoji = get_self_emoji(msg.from_user.id)
-        await msg.bot.send_message(partner_id, f"{emoji} گفت: {msg.text}")
+        prefix = f"{emoji} گفت:" if emoji else ""
+        await msg.bot.send_message(partner_id, f"{prefix} {msg.text}")
     else:
-        await msg.answer("⏳ هنوز به کسی متصل نشده‌ای. لطفا کمی صبر کن!")
+        me = await msg.bot.get_me()
+        link = f"https://t.me/{me.username}?start={msg.from_user.id}"
+        await msg.answer(f"⏳ هنوز به کسی متصل نشده‌ای. اگر می‌خواهی پیام ناشناس دریافت کنی، از این لینک استفاده کن:
+{link}")

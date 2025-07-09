@@ -1,32 +1,18 @@
 from aiogram.types import Message
-from bot_queue_manager import add_user_to_queue, find_match_for_user, remove_user_from_queue
+from database import add_message
 
 # active_chats: user_id -> {"partner_id": int, "self_emoji": str}
 active_chats = {}
 
-async def try_connect_user(message: Message, user_data: dict):
-    add_user_to_queue(message.from_user.id, **user_data)
-    match = find_match_for_user(message.from_user.id)
-    if match:
-        uid = message.from_user.id
-        oid = match["user_id"]
-        ue = user_data["emoji"]
-        oe = match["emoji"]
-        # تنظیم نقشه گفتگو با ایموجی کاربر
-        active_chats[uid] = {"partner_id": oid, "self_emoji": ue}
-        active_chats[oid] = {"partner_id": uid, "self_emoji": oe}
-        remove_user_from_queue(uid)
-        remove_user_from_queue(oid)
-        # اطلاع‌رسانی به هر دو طرف
-        await message.answer(
-            f"✅ اتصال برقرار شد!\n🎭 ایموجی شما: {ue}\n🎭 ایموجی طرف مقابل: {oe}\nحالا برای ارسال پیام آماده‌اید."
-        )
-        await message.bot.send_message(
-            oid,
-            f"✅ اتصال برقرار شد!\n🎭 ایموجی شما: {oe}\n🎭 ایموجی طرف مقابل: {ue}\nحالا برای ارسال پیام آماده‌اید."
-        )
-    else:
-        await message.answer("⏳ در صف انتظار قرار گرفتید. به محض یافتن کاربر مناسب مطلع می‌شوید.")
+async def direct_connect_user(message: Message, emoji: str, target_id: int):
+    uid = message.from_user.id
+    oid = target_id
+    # assign active chat
+    active_chats[uid] = {"partner_id": oid, "self_emoji": emoji}
+    active_chats[oid] = {"partner_id": uid, "self_emoji": ""}
+    # notify participants
+    await message.answer("✅ اتصال برقرار شد! اکنون می‌توانید پیام ارسال کنید.")
+    await message.bot.send_message(oid, "🔔 پیام ناشناس جدید در دسترس است!")
 
 def get_partner_id(user_id: int):
     info = active_chats.get(user_id)
