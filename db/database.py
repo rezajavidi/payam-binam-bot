@@ -1,33 +1,31 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.future import select
-from db.models import Base, User, Message
 
-DATABASE_URL = "sqlite+aiosqlite:///payambinam.db"
-engine = create_async_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+import sqlite3
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def init_db():
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE,
+            first_name TEXT,
+            username TEXT,
+            age INTEGER,
+            gender TEXT,
+            city TEXT,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-async def get_or_create_user(tg_user):
-    async with SessionLocal() as session:
-        result = await session.execute(select(User).where(User.tg_id == tg_user.id))
-        user = result.scalars().first()
-        if not user:
-            user = User(tg_id=tg_user.id, username=tg_user.username, name=tg_user.full_name)
-            session.add(user)
-            await session.commit()
-        return user
+def add_user_to_db(user_id, first_name, username):
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("INSERT OR IGNORE INTO users (user_id, first_name, username) VALUES (?, ?, ?)",
+              (user_id, first_name, username))
+    conn.commit()
+    conn.close()
 
-async def get_user_by_username(username):
-    async with SessionLocal() as session:
-        result = await session.execute(select(User).where(User.username == username))
-        return result.scalars().first()
-
-async def save_message(receiver_id, text):
-    async with SessionLocal() as session:
-        msg = Message(receiver_id=receiver_id, text=text)
-        session.add(msg)
-        await session.commit()
+# Run init on import
+init_db()

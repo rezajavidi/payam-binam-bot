@@ -1,35 +1,23 @@
-import asyncio
-import logging
-import os
 
-from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.client.default import DefaultBotProperties
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.callback_answer import CallbackAnswerMiddleware
+from aiogram import Bot, Dispatcher, Router, types
+from aiogram.types import Message
+from aiogram.filters import CommandStart
+from db.database import add_user_to_db
 
-import bot_user
-import bot_message_router
+bot = Bot(token="BOT_TOKEN_HERE")
+dp = Dispatcher()
+router = Router()
+dp.include_router(router)
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN environment variable is missing")
-
-logging.basicConfig(level=logging.INFO)
-
-# توجه: در Aiogram 3.7 به بعد باید از default=DefaultBotProperties استفاده کنیم
-bot = Bot(
-    token=BOT_TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-)
-
-dp = Dispatcher(storage=MemoryStorage())
-dp.include_router(bot_user.router)
-dp.include_router(bot_message_router.router)
-dp.message.middleware(CallbackAnswerMiddleware())
-
-async def main():
-    await dp.start_polling(bot)
+@router.message(CommandStart())
+async def start_handler(message: Message):
+    user = message.from_user
+    add_user_to_db(user.id, user.first_name, user.username)
+    await message.answer("🎉 خوش اومدی به پیام بینام!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import asyncio
+    from aiogram import executor
+    from handlers import message_router
+    dp.include_router(message_router.router)
+    executor.start_polling(dp, skip_updates=True)
