@@ -1,4 +1,3 @@
-aiogram[fastapi]
+aiogram[fastapi]   # ← خود Aiogram زیرمجموعهٔ FastAPI را می‌آورد
 sqlalchemy
 aiosqlite
-python-multipart
