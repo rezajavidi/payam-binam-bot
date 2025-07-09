@@ -1,10 +1,9 @@
-
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from bot_queue_manager import add_user_to_queue
-from bot_connector import try_connect_user, active_chats
+from bot_connector import try_connect_user
+from database import add_user_to_db
 
 router = Router()
 
@@ -14,6 +13,7 @@ class ProfileStates(StatesGroup):
     city = State()
     target_gender = State()
     target_city = State()
+    emoji = State()
 
 GENDERS = [("male", "👨 پسر"), ("female", "👩 دختر")]
 CITIES = ["تهران", "اصفهان", "تبریز", "مشهد", "شیراز", "رشت", "بندرعباس"]
@@ -23,47 +23,13 @@ def kb(items):
         [InlineKeyboardButton(text=label, callback_data=value)] for value, label in items
     ])
 
-@router.message(F.text.regexp(r'^/start\s+\d+'))
-async def deep_link_connect(msg: Message):
-    parts = msg.text.split()
-    target_id = int(parts[1])
-    visitor_id = msg.from_user.id
-    # ثبت اتصال مستقیم
-    active_chats[visitor_id] = target_id
-    active_chats[target_id] = visitor_id
-    await msg.answer("✅ اتصال برقرار شد! می‌توانید پیام بفرستید.")
-    await msg.bot.send_message(target_id, "✅ شما با یک کاربر ناشناس متصل شدید، گفتگو کنید!")
-
 @router.message(F.text == "/start")
 async def start(msg: Message, state: FSMContext):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📩 دریافت پیام ناشناس با لینک", callback_data="mode_link")],
-        [InlineKeyboardButton(text="💬 چت ناشناس دو نفره", callback_data="mode_chat")]
-    ])
-    await msg.answer("سلام! می‌خوای چی‌کار کنی؟", reply_markup=keyboard)
-    await state.clear()
-
-@router.callback_query(F.data == "mode_chat")
-async def choose_chat_mode(cb: CallbackQuery, state: FSMContext):
-    await cb.message.edit_text("برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:",
-                               reply_markup=kb(GENDERS))
-    await state.set_state(ProfileStates.gender)
-    await cb.answer()
-
-@router.callback_query(F.data == "mode_link")
-async def choose_link_mode(cb: CallbackQuery, state: FSMContext):
-    user_id = cb.from_user.id
-    me = await cb.bot.get_me()
-    username = me.username
-    link = f"https://t.me/{username}?start={user_id}"
-    await cb.message.edit_text(
-        f"""✅ لینک دریافت پیام ناشناس تو:
-
-{link}
-
-این لینک رو برای دوستات بفرست تا بتونن ناشناس برات پیام بفرستن!"""
+    await msg.answer(
+        "سلام! برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:",
+        reply_markup=kb(GENDERS)
     )
-    await cb.answer()
+    await state.set_state(ProfileStates.gender)
 
 @router.callback_query(ProfileStates.gender)
 async def choose_gender(cb: CallbackQuery, state: FSMContext):
@@ -82,7 +48,7 @@ async def choose_age(msg: Message, state: FSMContext):
 @router.callback_query(ProfileStates.city)
 async def choose_city(cb: CallbackQuery, state: FSMContext):
     await state.update_data(city=cb.data)
-    await cb.message.edit_text("جنسیت مخاطب رو انتخاب کن:", reply_markup=kb(GENDERS+[("any","هرکدام")]))
+    await cb.message.edit_text("جنسیت مخاطب رو انتخاب کن:", reply_markup=kb(GENDERS + [("any", "هرکدام")]))
     await state.set_state(ProfileStates.target_gender)
     await cb.answer()
 
@@ -95,10 +61,26 @@ async def choose_target_gender(cb: CallbackQuery, state: FSMContext):
     await cb.answer()
 
 @router.callback_query(ProfileStates.target_city)
-async def finish_profile(cb: CallbackQuery, state: FSMContext):
+async def choose_target_city(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(target_city=cb.data)
+    await cb.message.edit_text("لطفا یک ایموجی برای نمایش خود انتخاب کن:")
+    await state.set_state(ProfileStates.emoji)
+    await cb.answer()
+
+@router.message(ProfileStates.emoji)
+async def choose_emoji(msg: Message, state: FSMContext):
+    emoji = msg.text.strip()
+    await state.update_data(emoji=emoji)
     data = await state.get_data()
-    data["target_city"] = cb.data
+    # ذخیره پروفایل کاربر در پایگاه داده
+    add_user_to_db(
+        user_id=msg.from_user.id,
+        first_name=msg.from_user.first_name or "",
+        username=msg.from_user.username or "",
+        age=data.get("age"),
+        gender=data.get("gender"),
+        city=data.get("city")
+    )
     await state.clear()
     # اضافه به صف و تلاش برای اتصال
-    await try_connect_user(cb.message, data)
-    await cb.answer()
+    await try_connect_user(msg, data)

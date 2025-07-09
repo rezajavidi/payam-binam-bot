@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from bot_connector import get_partner_id, end_chat
+from bot_connector import get_partner_id, get_self_emoji, end_chat
+from database import add_message
 
 router = Router()
 
@@ -17,6 +18,10 @@ async def end_chat_cmd(msg: Message):
 async def relay(msg: Message):
     partner_id = get_partner_id(msg.from_user.id)
     if partner_id:
-        await msg.bot.send_message(partner_id, msg.text)
+        # ذخیره پیام در پایگاه داده
+        add_message(sender_id=msg.from_user.id, receiver_id=partner_id, text=msg.text)
+        # ارسال با پیشوند ایموجی
+        emoji = get_self_emoji(msg.from_user.id)
+        await msg.bot.send_message(partner_id, f"{emoji} گفت: {msg.text}")
     else:
         await msg.answer("⏳ هنوز به کسی متصل نشده‌ای. لطفا کمی صبر کن!")
