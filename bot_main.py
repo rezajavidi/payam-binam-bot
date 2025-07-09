@@ -1,3 +1,9 @@
+import os
+from aiogram import Bot, Dispatcher, F
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import Message
+
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart
