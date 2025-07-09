@@ -1,3 +1,4 @@
+
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -24,11 +25,32 @@ def kb(items):
 
 @router.message(F.text == "/start")
 async def start(msg: Message, state: FSMContext):
-    await msg.answer(
-        "سلام! برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:",
-        reply_markup=kb(GENDERS)
-    )
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📩 دریافت پیام ناشناس با لینک", callback_data="mode_link")],
+        [InlineKeyboardButton(text="💬 چت ناشناس دو نفره", callback_data="mode_chat")]
+    ])
+    await msg.answer("سلام! می‌خوای چی‌کار کنی؟", reply_markup=keyboard)
+    await state.clear()
+
+@router.callback_query(F.data == "mode_chat")
+async def choose_chat_mode(cb: CallbackQuery, state: FSMContext):
+    await cb.message.edit_text("برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:",
+                               reply_markup=kb(GENDERS))
     await state.set_state(ProfileStates.gender)
+    await cb.answer()
+
+@router.callback_query(F.data == "mode_link")
+async def choose_link_mode(cb: CallbackQuery, state: FSMContext):
+    user_id = cb.from_user.id
+    link = f"https://t.me/{cb.bot.username}?start={user_id}"
+    await cb.message.edit_text(
+        f"✅ لینک دریافت پیام ناشناس تو:
+
+{link}
+
+این لینک رو برای دوستات بفرست تا بتونن ناشناس برات پیام بفرستن!"
+    )
+    await cb.answer()
 
 @router.callback_query(ProfileStates.gender)
 async def choose_gender(cb: CallbackQuery, state: FSMContext):
