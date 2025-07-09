@@ -42,7 +42,9 @@ async def choose_chat_mode(cb: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "mode_link")
 async def choose_link_mode(cb: CallbackQuery, state: FSMContext):
     user_id = cb.from_user.id
-    link = f"https://t.me/{cb.bot.username}?start={user_id}"
+    me = await cb.bot.get_me()
+    username = me.username
+    link = f"https://t.me/{username}?start={user_id}"
     await cb.message.edit_text(
         f"""✅ لینک دریافت پیام ناشناس تو:
 
