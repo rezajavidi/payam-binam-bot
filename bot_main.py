@@ -1,10 +1,9 @@
-
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from db.database import add_user_to_db
 
-bot = Bot(token="BOT_TOKEN_HERE")
+bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
 router = Router()
 dp.include_router(router)
