@@ -1,3 +1,2 @@
-aiogram[fastapi]   # ← خود Aiogram زیرمجموعهٔ FastAPI را می‌آورد
-sqlalchemy
-aiosqlite
+aiogram==3.7.0
+python-dotenv

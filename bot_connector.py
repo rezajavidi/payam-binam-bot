@@ -1,7 +1,6 @@
 from aiogram.types import Message
 from bot_queue_manager import add_user_to_queue, find_match_for_user, remove_user_from_queue
 
-# برای اتصال دو کاربر ناشناس
 active_chats = {}
 
 async def try_connect_user(message: Message, user_data: dict):
@@ -12,16 +11,16 @@ async def try_connect_user(message: Message, user_data: dict):
         active_chats[match["user_id"]] = message.from_user.id
         remove_user_from_queue(message.from_user.id)
         remove_user_from_queue(match["user_id"])
-        await message.answer("✅ اتصال برقرار شد! شما اکنون با یک کاربر ناشناس در حال گفتگو هستید.")
+        await message.answer("✅ اتصال برقرار شد! می‌توانید پیام بفرستید.")
+        await message.bot.send_message(match["user_id"], "✅ شما با یک کاربر ناشناس متصل شدید، گفتگو کنید!")
     else:
-        await message.answer("⏳ منتظر بمانید تا کاربر مناسب پیدا شود...")
+        await message.answer("⏳ در صف انتظار قرار گرفتید. به محض یافتن کاربر مناسب مطلع می‌شوید.")
 
-def get_partner_id(user_id: int) -> int:
+def get_partner_id(user_id: int):
     return active_chats.get(user_id)
 
 def end_chat(user_id: int):
-    partner_id = active_chats.get(user_id)
+    partner_id = active_chats.pop(user_id, None)
     if partner_id:
-        del active_chats[user_id]
-        del active_chats[partner_id]
+        active_chats.pop(partner_id, None)
     return partner_id
