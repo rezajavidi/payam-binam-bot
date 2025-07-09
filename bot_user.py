@@ -9,6 +9,7 @@ router = Router()
 
 class StartStates(StatesGroup):
     choice = State()
+    link_emoji = State()
 
 class ProfileStates(StatesGroup):
     gender = State()
@@ -26,11 +27,19 @@ def kb(items):
         [InlineKeyboardButton(text=label, callback_data=value)] for value, label in items
     ])
 
-@router.message(F.text == "/start")
+@router.message(F.command("start"))
 async def cmd_start(msg: Message, state: FSMContext):
-    items = [("link", "📨 دریافت لینک ناشناس شخصی"), ("connect", "🔗 متصل شدن به یک ناشناس")]
-    await msg.answer("لطفا یکی از گزینه‌های زیر را انتخاب کنید:", reply_markup=kb(items))
-    await state.set_state(StartStates.choice)
+    args = msg.get_args()
+    await state.clear()
+    if args:
+        # Deep link payload: direct anonymous message to specific user
+        await msg.answer("برای شروع چت ناشناس، لطفا یک ایموجی برای نمایش خود انتخاب کن:")
+        await state.update_data(link_target=int(args))
+        await state.set_state(StartStates.link_emoji)
+    else:
+        items = [("link", "📨 دریافت لینک ناشناس شخصی"), ("connect", "🔗 متصل شدن به یک ناشناس")]
+        await msg.answer("لطفا یکی از گزینه‌های زیر را انتخاب کنید:", reply_markup=kb(items))
+        await state.set_state(StartStates.choice)
 
 @router.callback_query(StartStates.choice)
 async def start_choice(cb: CallbackQuery, state: FSMContext):
@@ -44,6 +53,15 @@ async def start_choice(cb: CallbackQuery, state: FSMContext):
         await cb.message.edit_text(f"لینک ناشناس شخصی شما:\n{link}")
         await state.clear()
     await cb.answer()
+
+@router.message(StartStates.link_emoji)
+async def deep_link_emoji(msg: Message, state: FSMContext):
+    emoji = msg.text.strip()
+    data = await state.get_data()
+    target = data.get("link_target")
+    # Directly connect sender and target with emoji
+    await try_connect_user(msg, {"emoji": emoji, "direct_target": target})
+    await state.clear()
 
 @router.callback_query(ProfileStates.gender)
 async def choose_gender(cb: CallbackQuery, state: FSMContext):
@@ -86,6 +104,7 @@ async def choose_emoji(msg: Message, state: FSMContext):
     emoji = msg.text.strip()
     await state.update_data(emoji=emoji)
     data = await state.get_data()
+    # ذخیره پروفایل کاربر در پایگاه داده
     add_user_to_db(
         user_id=msg.from_user.id,
         first_name=msg.from_user.first_name or "",
