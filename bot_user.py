@@ -43,13 +43,16 @@ async def choose_chat_mode(cb: CallbackQuery, state: FSMContext):
 async def choose_link_mode(cb: CallbackQuery, state: FSMContext):
     user_id = cb.from_user.id
     link = f"https://t.me/{cb.bot.username}?start={user_id}"
-    await cb.message.edit_text(
+    message_text = (
         f"✅ لینک دریافت پیام ناشناس تو:
 
-{link}
+"
+        f"{link}
 
-این لینک رو برای دوستات بفرست تا بتونن ناشناس برات پیام بفرستن!"
+"
+        "این لینک رو برای دوستات بفرست تا بتونن ناشناس برات پیام بفرستن!"
     )
+    await cb.message.edit_text(message_text)
     await cb.answer()
 
 @router.callback_query(ProfileStates.gender)
