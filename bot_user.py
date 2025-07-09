@@ -7,6 +7,9 @@ from database import add_user_to_db
 
 router = Router()
 
+class StartStates(StatesGroup):
+    choice = State()
+
 class ProfileStates(StatesGroup):
     gender = State()
     age = State()
@@ -24,12 +27,26 @@ def kb(items):
     ])
 
 @router.message(F.text == "/start")
-async def start(msg: Message, state: FSMContext):
-    await msg.answer(
-        "سلام! برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:",
-        reply_markup=kb(GENDERS)
-    )
-    await state.set_state(ProfileStates.gender)
+async def cmd_start(msg: Message, state: FSMContext):
+    # Initial choice: personal link or connect to anonymous
+    items = [("link", "📨 دریافت لینک ناشناس شخصی"), ("connect", "🔗 متصل شدن به یک ناشناس")]
+    await msg.answer("لطفا یکی از گزینه‌های زیر را انتخاب کنید:", reply_markup=kb(items))
+    await state.set_state(StartStates.choice)
+
+@router.callback_query(StartStates.choice)
+async def start_choice(cb: CallbackQuery, state: FSMContext):
+    choice = cb.data
+    if choice == "connect":
+        await cb.message.edit_text("سلام! برای شروع چت ناشناس، ابتدا جنسیتت رو انتخاب کن:", reply_markup=kb(GENDERS))
+        await state.set_state(ProfileStates.gender)
+    elif choice == "link":
+        # generate personal deep link
+        me = await cb.message.bot.get_me()
+        link = f"https://t.me/{me.username}?start={cb.from_user.id}"
+        await cb.message.edit_text(f"لینک ناشناس شخصی شما:
+{link}")
+        await state.clear()
+    await cb.answer()
 
 @router.callback_query(ProfileStates.gender)
 async def choose_gender(cb: CallbackQuery, state: FSMContext):
